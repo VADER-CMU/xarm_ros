@@ -25,17 +25,17 @@
 /* Used for Cartesian path computation, please modify as needed: */
 const double jump_threshold = 0.0;
 const double eef_step = 0.005;
-const double maxV_scale_factor = 0.3; // check!!
+const double maxV_scale_factor = 0.3;
 
 
 namespace rvt = rviz_visual_tools;
 
-class XArmSimplePlanner
+class VADERPlanner
 {
   public:
-    XArmSimplePlanner(const std::string plan_group_name):spinner(SPINNER_THREAD_NUM), group(plan_group_name){init();};
-    XArmSimplePlanner():spinner(SPINNER_THREAD_NUM),group(PLANNING_GROUP){init();};
-    ~XArmSimplePlanner(){ delete visual_tools;};
+    VADERPlanner(const std::string plan_group_name):spinner(SPINNER_THREAD_NUM), group(plan_group_name){init();};
+    VADERPlanner():spinner(SPINNER_THREAD_NUM),group(PLANNING_GROUP){init();};
+    ~VADERPlanner(){ delete visual_tools;};
     void start();
     void stop();
 
@@ -66,7 +66,7 @@ class XArmSimplePlanner
     void show_trail(bool plan_result);
 };
 
-void XArmSimplePlanner::init()
+void VADERPlanner::init()
 {
   joint_names = group.getJointNames();
 
@@ -77,12 +77,12 @@ void XArmSimplePlanner::init()
   ROS_INFO_NAMED("move_group_planner", "End effector link: %s", group.getEndEffectorLink().c_str());
 
   /* Notice: the correct way to specify member function as callbacks */
-  plan_pose_srv = node_handle.advertiseService("xarm_pose_plan", &XArmSimplePlanner::do_pose_plan, this);
-  plan_joint_srv = node_handle.advertiseService("xarm_joint_plan", &XArmSimplePlanner::do_joint_plan, this);
-  sing_cart_srv = node_handle.advertiseService("xarm_straight_plan", &XArmSimplePlanner::do_single_cartesian_plan, this);
+  plan_pose_srv = node_handle.advertiseService("xarm_pose_plan", &VADERPlanner::do_pose_plan, this);
+  plan_joint_srv = node_handle.advertiseService("xarm_joint_plan", &VADERPlanner::do_joint_plan, this);
+  sing_cart_srv = node_handle.advertiseService("xarm_straight_plan", &VADERPlanner::do_single_cartesian_plan, this);
 
-  exec_plan_sub = node_handle.subscribe("xarm_planner_exec", 10, &XArmSimplePlanner::execute_plan_topic, this);
-  exec_plan_srv = node_handle.advertiseService("xarm_exec_plan", &XArmSimplePlanner::exec_plan_cb, this);
+  exec_plan_sub = node_handle.subscribe("xarm_planner_exec", 10, &VADERPlanner::execute_plan_topic, this);
+  exec_plan_srv = node_handle.advertiseService("xarm_exec_plan", &VADERPlanner::exec_plan_cb, this);
 
   visual_tools = new moveit_visual_tools::MoveItVisualTools("link_base");
   Eigen::Isometry3d text_pose = Eigen::Isometry3d::Identity();
@@ -92,18 +92,18 @@ void XArmSimplePlanner::init()
 
 }
 
-void XArmSimplePlanner::start()
+void VADERPlanner::start()
 {
   ROS_INFO("Spinning");
   spinner.start();
 }
 
-void XArmSimplePlanner::stop()
+void VADERPlanner::stop()
 {
   spinner.stop();
 }
 
-void XArmSimplePlanner::show_trail(bool plan_result)
+void VADERPlanner::show_trail(bool plan_result)
 {
   if(plan_result)
   {
@@ -116,7 +116,7 @@ void XArmSimplePlanner::show_trail(bool plan_result)
   }
 }
 
-bool XArmSimplePlanner::do_pose_plan(xarm_planner::pose_plan::Request &req, xarm_planner::pose_plan::Response &res)
+bool VADERPlanner::do_pose_plan(xarm_planner::pose_plan::Request &req, xarm_planner::pose_plan::Response &res)
 {
   group.setPoseTarget(req.target);
   
@@ -133,7 +133,7 @@ bool XArmSimplePlanner::do_pose_plan(xarm_planner::pose_plan::Request &req, xarm
   return success;
 }
 
-bool XArmSimplePlanner::do_single_cartesian_plan(xarm_planner::single_straight_plan::Request &req, xarm_planner::single_straight_plan::Response &res)
+bool VADERPlanner::do_single_cartesian_plan(xarm_planner::single_straight_plan::Request &req, xarm_planner::single_straight_plan::Response &res)
 {
   std::vector<geometry_msgs::Pose> waypoints;
   waypoints.push_back(req.target);
@@ -148,7 +148,7 @@ bool XArmSimplePlanner::do_single_cartesian_plan(xarm_planner::single_straight_p
   {
     my_xarm_plan.trajectory_ = trajectory;
   }
-  fprintf(stderr, "[XArmSimplePlanner::do_single_cartesian_plan(): ] Coverage: %lf\n", fraction);
+  fprintf(stderr, "[VADERPlanner::do_single_cartesian_plan(): ] Coverage: %lf\n", fraction);
 
   res.success = success;
   show_trail(success);
@@ -157,7 +157,7 @@ bool XArmSimplePlanner::do_single_cartesian_plan(xarm_planner::single_straight_p
 
 }
 
-bool XArmSimplePlanner::do_joint_plan(xarm_planner::joint_plan::Request &req, xarm_planner::joint_plan::Response &res)
+bool VADERPlanner::do_joint_plan(xarm_planner::joint_plan::Request &req, xarm_planner::joint_plan::Response &res)
 {
   ROS_INFO("move_group_planner received new plan Request");
   if(!group.setJointValueTarget(req.target))
@@ -173,7 +173,7 @@ bool XArmSimplePlanner::do_joint_plan(xarm_planner::joint_plan::Request &req, xa
   return success;
 }
 
-bool XArmSimplePlanner::exec_plan_cb(xarm_planner::exec_plan::Request &req, xarm_planner::exec_plan::Response &res)
+bool VADERPlanner::exec_plan_cb(xarm_planner::exec_plan::Request &req, xarm_planner::exec_plan::Response &res)
 {
   if(req.exec)
   {
@@ -188,7 +188,7 @@ bool XArmSimplePlanner::exec_plan_cb(xarm_planner::exec_plan::Request &req, xarm
 }
 
 /* execution subscriber call-back function */
-void XArmSimplePlanner::execute_plan_topic(const std_msgs::Bool::ConstPtr& exec)
+void VADERPlanner::execute_plan_topic(const std_msgs::Bool::ConstPtr& exec)
 {
   if(exec->data)
   { 
@@ -198,7 +198,7 @@ void XArmSimplePlanner::execute_plan_topic(const std_msgs::Bool::ConstPtr& exec)
 }
 
 
-std::string XArmSimplePlanner::PLANNING_GROUP; // Definition of static class member
+std::string VADERPlanner::PLANNING_GROUP; // Definition of static class member
 
 int main(int argc, char** argv)
 {
@@ -206,9 +206,9 @@ int main(int argc, char** argv)
   ros::NodeHandle nh;
   std::string robot_name = "";
   nh.getParam("robot_name", robot_name);
-  XArmSimplePlanner::PLANNING_GROUP = robot_name;
+  VADERPlanner::PLANNING_GROUP = robot_name;
 
-  XArmSimplePlanner planner;
+  VADERPlanner planner;
 
   planner.start();
 
