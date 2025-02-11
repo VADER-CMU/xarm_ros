@@ -27,20 +27,19 @@ const double jump_threshold = 0.0;
 const double eef_step = 0.005;
 const double maxV_scale_factor = 0.3;
 
-const std::string PLANNING_GROUP_L = "L_xarm7";
-const std::string PLANNING_GROUP_R = "R_xarm7";
 
 namespace rvt = rviz_visual_tools;
 
 class VADERPlanner
 {
   public:
-    VADERPlanner(const std::string plan_group_name):spinner(SPINNER_THREAD_NUM), group(plan_group_name), PLANNING_GROUP(plan_group_name){init();};
-    // VADERPlanner():spinner(SPINNER_THREAD_NUM),group(PLANNING_GROUP){init();};
+    VADERPlanner(const std::string plan_group_name):spinner(SPINNER_THREAD_NUM), group(plan_group_name){init();};
+    VADERPlanner():spinner(SPINNER_THREAD_NUM),group(PLANNING_GROUP){init();};
     ~VADERPlanner(){ delete visual_tools;};
     void start();
     void stop();
 
+    static std::string PLANNING_GROUP; // declaration of static class member
 
   private:
     ros::NodeHandle node_handle;
@@ -50,8 +49,6 @@ class VADERPlanner
     moveit::planning_interface::MoveGroupInterface group;
     moveit::planning_interface::MoveGroupInterface::Plan my_xarm_plan;
     moveit_visual_tools::MoveItVisualTools *visual_tools;
-    std::string left_or_right_arm;
-    std::string PLANNING_GROUP;
 
     ros::Publisher display_path;
     ros::ServiceServer plan_pose_srv;
@@ -80,17 +77,17 @@ void VADERPlanner::init()
   ROS_INFO_NAMED("move_group_planner", "End effector link: %s", group.getEndEffectorLink().c_str());
 
   /* Notice: the correct way to specify member function as callbacks */
-  plan_pose_srv = node_handle.advertiseService(PLANNING_GROUP + "_xarm_pose_plan", &VADERPlanner::do_pose_plan, this);
-  plan_joint_srv = node_handle.advertiseService(PLANNING_GROUP + "_xarm_joint_plan", &VADERPlanner::do_joint_plan, this);
-  sing_cart_srv = node_handle.advertiseService(PLANNING_GROUP + "_xarm_straight_plan", &VADERPlanner::do_single_cartesian_plan, this);
+  plan_pose_srv = node_handle.advertiseService("xarm_pose_plan", &VADERPlanner::do_pose_plan, this);
+  plan_joint_srv = node_handle.advertiseService("xarm_joint_plan", &VADERPlanner::do_joint_plan, this);
+  sing_cart_srv = node_handle.advertiseService("xarm_straight_plan", &VADERPlanner::do_single_cartesian_plan, this);
 
-  exec_plan_sub = node_handle.subscribe(PLANNING_GROUP + "_xarm_planner_exec", 10, &VADERPlanner::execute_plan_topic, this);
-  exec_plan_srv = node_handle.advertiseService(PLANNING_GROUP + "_xarm_exec_plan", &VADERPlanner::exec_plan_cb, this);
+  exec_plan_sub = node_handle.subscribe("xarm_planner_exec", 10, &VADERPlanner::execute_plan_topic, this);
+  exec_plan_srv = node_handle.advertiseService("xarm_exec_plan", &VADERPlanner::exec_plan_cb, this);
 
   visual_tools = new moveit_visual_tools::MoveItVisualTools("link_base");
   Eigen::Isometry3d text_pose = Eigen::Isometry3d::Identity();
   text_pose.translation().z() = 0.8;
-  visual_tools->publishText(text_pose, PLANNING_GROUP + "_xArm Planner Demo", rvt::WHITE, rvt::XLARGE);
+  visual_tools->publishText(text_pose, "xArm Planner Demo", rvt::WHITE, rvt::XLARGE);
   visual_tools->trigger();
 
 }
@@ -180,7 +177,7 @@ bool VADERPlanner::exec_plan_cb(xarm_planner::exec_plan::Request &req, xarm_plan
 {
   if(req.exec)
   {
-    ROS_INFO("%s Received Execution Service Request", PLANNING_GROUP.c_str());
+    ROS_INFO("Received Execution Service Request");
     bool finish_ok = (group.execute(my_xarm_plan) == moveit::planning_interface::MoveItErrorCode::SUCCESS); /* return after execution finish */
     res.success = finish_ok;
     return finish_ok;
@@ -195,32 +192,29 @@ void VADERPlanner::execute_plan_topic(const std_msgs::Bool::ConstPtr& exec)
 {
   if(exec->data)
   { 
-    ROS_INFO("%s Received Execution Command !!!!!", PLANNING_GROUP.c_str());
+    ROS_INFO("Received Execution Command !!!!!");
     group.asyncExecute(my_xarm_plan); /* return without waiting for finish */
   }
 }
 
 
-// std::string VADERPlanner::PLANNING_GROUP; // Definition of static class member
+std::string VADERPlanner::PLANNING_GROUP; // Definition of static class member
 
 int main(int argc, char** argv)
 {
   ros::init(argc, argv, "vader_dual_arm_planner");
   ros::NodeHandle nh;
-  // std::string robot_name1 = "";
-  // nh.getParam("robot_name", robot_name1);
-  // VADERPlanner::PLANNING_GROUP = robot_name1;
+  std::string robot_name = "";
+  nh.getParam("robot_name", robot_name);
+  VADERPlanner::PLANNING_GROUP = robot_name;
 
-  VADERPlanner plannerL(PLANNING_GROUP_L);
-  VADERPlanner plannerR(PLANNING_GROUP_R);
+  VADERPlanner planner;
 
-  plannerL.start();
-  plannerR.start();
+  planner.start();
+
   ROS_INFO("Waiting for \'pose_plan\' or \'joint_plan\' service Request ...");
-  //rosservice call L_xarm7_xarm_pose_plan 'target: [[0.28, 0.2, 0.2], [1.0, 0.0, 0.0, 0.0]]'
-  //rosservice call R_xarm7_xarm_pose_plan 'target: [[0.28, 0.8, 0.2], [1.0, 0.0, 0.0, 0.0]]' //right arm is set at [0,1,0] origin, so move target accordingly
-  //rosservice call L_xarm7_xarm_exec_plan 'true'; rosservice call R_xarm7_xarm_exec_plan 'true' //this is sequential.
 
+  /* necessary: because AsyncSpinner is not operating in the same thread */
   ros::waitForShutdown();
   return 0;
 }

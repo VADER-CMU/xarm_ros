@@ -220,6 +220,10 @@ add_executable(vader_dual_arm_planner src/vader_dual_arm_planner.cpp)
 add_dependencies(vader_dual_arm_planner ${${PROJECT_NAME}_EXPORTED_TARGETS})
 target_link_libraries(vader_dual_arm_planner ${catkin_LIBRARIES})
 
+add_executable(vader_single_arm_planner src/vader_single_arm_planner.cpp)
+add_dependencies(vader_single_arm_planner ${${PROJECT_NAME}_EXPORTED_TARGETS})
+target_link_libraries(vader_single_arm_planner ${catkin_LIBRARIES})
+
 add_executable(xarm_simple_planner_test src/xarm_simple_planner_test.cpp)
 add_dependencies(xarm_simple_planner_test ${${PROJECT_NAME}_EXPORTED_TARGETS})
 add_dependencies(xarm_simple_planner_test xarm_msgs_generate_messages_cpp)
@@ -234,6 +238,7 @@ install(TARGETS
   xarm_simple_planner
   xarm_simple_planner_test
   xarm_gripper_planner
+  vader_single_arm_planner
   vader_dual_arm_planner
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
