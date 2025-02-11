@@ -1,0 +1,5 @@
+<?xml version="1.0"?>
+<launch>
+  <include file="$(find xarm_gazebo)/launch/_dual_robot_beside_table.launch">
+  </include>
+</launch>
