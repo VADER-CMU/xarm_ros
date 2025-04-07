@@ -3,7 +3,7 @@
   <arg name="add_gripper" default="false" />
   <arg name="add_vacuum_gripper" default="false" />
   <arg name="namespace" default="xarm"/>
-  <arg name="no_gui_plan" default="true" />
+  <arg name="no_gui_plan" default="false" />
   <arg name="robot_type" default="xarm"/>
   <arg name="model1300" default="false" />
 
