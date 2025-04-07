@@ -57,7 +57,7 @@
     <arg name="geometry_mesh_tcp_xyz" value="$(arg geometry_mesh_tcp_xyz)"/>
     <arg name="geometry_mesh_tcp_rpy" value="$(arg geometry_mesh_tcp_rpy)"/>
     <!-- uhhh -->
-    <arg name="NO_GUI_CTRL" default="true"/>
+    <arg name="NO_GUI_CTRL" default="false"/>
 
   </include>
 
